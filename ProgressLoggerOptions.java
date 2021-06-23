@@ -4,7 +4,8 @@ import javax.swing.JButton;
 
 
 public class ProgressLoggerOptions extends JPanel {
-    ProgressLoggerOptions(LoggerButtonListener listener) {
+
+    public ProgressLoggerOptions(LoggerButtonListener listener) {
         JButton openAgendaButton = new JButton("MANAGE EXISTING SCHEDULE");
         JButton createAgendaButton = new JButton("CREATE NEW SCHEDULE");
 
