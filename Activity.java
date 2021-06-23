@@ -1,7 +1,7 @@
 public class Activity {
 
-    // dateStart timeStart dateEnd timeEnd titleofActivity
-    // activityInfo dateCreated timeCreated dateCompleted timeCompleted
+    // dateStart dateEnd titleofActivity
+    // activityInfo dateCreated dateCompleted
     private String dateStart;
     private String dateEnd;
     private String titleOfActivity;
