@@ -13,7 +13,7 @@ public class UpdatePlannedActivity extends JPanel implements ActionListener {
 
     private JLabel successLabel = new JLabel("");
 
-    private int index = 0;
+    private int index;
 
     private JComboBox activityListComboBox;
 
@@ -26,9 +26,10 @@ public class UpdatePlannedActivity extends JPanel implements ActionListener {
 
     private JPanel optionButtons = new JPanel();
 
-    UpdatePlannedActivity(LoggerButtonListener listener) {
+    public UpdatePlannedActivity(LoggerButtonListener listener) {
         this.setLayout(new BorderLayout());
 
+        this.index = 0;
 
         setCompleteButton = new JButton("SET AS COMPLETE");
         setCompleteButton.addActionListener(listener);
