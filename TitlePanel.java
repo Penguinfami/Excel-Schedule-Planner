@@ -6,7 +6,7 @@ import javax.swing.BoxLayout;
 import java.awt.Font;
 import java.awt.Dimension;
 
-// this is a Title Panel
+// this is a Title Panel ?
 public class TitlePanel extends JPanel {
 
     private String titleStr = ("<HTML><H1>My Progress Planner</H1></HTML>");
