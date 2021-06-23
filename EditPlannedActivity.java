@@ -1,8 +1,6 @@
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import java.awt.BorderLayout;
-import javax.swing.BoxLayout;
 import java.awt.GridLayout;
 import java.awt.FlowLayout;
 import java.util.Calendar;

@@ -8,7 +8,7 @@ public class PriorityQueueNode<T> {
     private PriorityQueueNode<T> next;
     private PriorityQueueNode<T> previous;
     private T item;
-    private int priority;
+    private final int  priority;
 
     /**
      * PriorityQueueNode

@@ -8,7 +8,7 @@ public class LoggerButtonListener implements ActionListener {
 
     /**
      * StartButtonListener
-     * Construct a start button listner
+     * Construct a start button listener
      *
      * @param parent The parent starting frame
      */

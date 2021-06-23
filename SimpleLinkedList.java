@@ -2,7 +2,7 @@
  * SimpleLinkedList.java
  *
  * @author Christine Zhao
- * Jan 2021
+ * January 2021
  * A linked list with methods to manage it
  */
 

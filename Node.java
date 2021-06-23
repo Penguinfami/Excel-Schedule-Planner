@@ -1,8 +1,7 @@
 /**
  * Node.java
- *
  * @param <T> The item type
- *            A node that holds an item
+ *  A node that holds an item
  * @author Christine Zhao
  */
 public class Node<T> {

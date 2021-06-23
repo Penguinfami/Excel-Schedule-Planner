@@ -1,23 +1,9 @@
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.IOException;
+
 import javax.swing.JPanel;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import java.awt.GridLayout;
 import java.awt.Font;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import javax.swing.SwingUtilities;
-import javax.swing.JSlider;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import java.util.Hashtable;
-import java.io.BufferedReader;
-import java.io.PrintWriter;
-import java.io.FileReader;
-import java.io.File;
-import java.io.IOException;
 import javax.swing.JComboBox;
 
 public class ManageAgenda extends JPanel {

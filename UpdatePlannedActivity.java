@@ -3,16 +3,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
-import java.util.Calendar;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import javax.swing.SwingUtilities;
-import javax.swing.JSlider;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import java.util.Hashtable;
 import javax.swing.JComboBox;
-import javax.swing.JTextField;
 import java.awt.Font;
 
 public class UpdatePlannedActivity extends JPanel implements ActionListener {

@@ -1,21 +1,9 @@
 
-import javax.swing.JButton;
-import javax.swing.JLabel;
+
 import javax.swing.JPanel;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import java.awt.BorderLayout;
-import java.awt.GridLayout;
 import java.awt.Component;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import javax.swing.SwingUtilities;
-import javax.swing.JSlider;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import java.util.Hashtable;
-import javax.swing.JComboBox;
-import javax.swing.JTextField;
 import javax.swing.JTable;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;

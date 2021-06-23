@@ -1,17 +1,7 @@
 
 import javax.swing.JPanel;
 import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-import java.awt.BorderLayout;
-import java.awt.GridLayout;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import javax.swing.SwingUtilities;
-import javax.swing.JSlider;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
-import java.util.Hashtable;
+
 
 public class ProgressLoggerOptions extends JPanel {
     ProgressLoggerOptions(LoggerButtonListener listener) {

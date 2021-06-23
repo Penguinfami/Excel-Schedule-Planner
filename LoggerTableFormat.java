@@ -1,7 +1,5 @@
 
-import org.apache.poi.ss.usermodel.BorderStyle;
-import org.apache.poi.xssf.model.StylesTable;
-import org.apache.poi.xssf.usermodel.*;
+
 
 public class LoggerTableFormat {
 

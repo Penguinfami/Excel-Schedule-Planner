@@ -38,11 +38,9 @@ public class PriorityLinkedList<E> {
         if (nextNode == null) {
             prevNode.setNext(new PriorityQueueNode<E>(item, priority, null, prevNode));
             tail = prevNode.getNext();
-            return;
         } else if (nextNode.getPriority() < priority) { // higher priorities come first in the list
             prevNode.setNext(new PriorityQueueNode<E>(item, priority, nextNode, prevNode));
             nextNode.setPrevious(prevNode.getNext());
-            return;
         } else {
             add2(item, priority, prevNode.getNext(), nextNode.getNext());
         }
