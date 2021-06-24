@@ -1,6 +1,6 @@
 # Excel-Schedule-Planner
 
-An interactive GUI  activity scheduler. Create a blank schedule and add activities to it that are then transfered to the "MyWorkbook.xlsx" Excel Workbook using Apache POI, where all created schedules are saved.
+An interactive GUI activity scheduler using Java Swing and Apache POI. Create a blank schedule and add activities to it that are then transfered to the "MyWorkbook.xlsx" Excel Workbook, where all created schedules are saved.
 
 ### Create A Schedule
 
