@@ -17,7 +17,7 @@ import org.apache.poi.ss.usermodel.*;
 
 public class ProgressLoggerFrame extends JFrame {
 
-    private String[] columnNames = LoggerTableFormat.headerTitles;
+    private final String[] columnNames = LoggerTableFormat.headerTitles;
 
     private LoggerButtonListener buttonListener = new LoggerButtonListener(this);
     private TitlePanel titlePanel = new TitlePanel();
