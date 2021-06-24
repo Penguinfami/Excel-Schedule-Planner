@@ -19,8 +19,6 @@ public class ProgressLoggerFrame extends JFrame {
 
     private String[] columnNames = LoggerTableFormat.headerTitles;
 
-    // is this a git update? this is recent update
-
     private LoggerButtonListener buttonListener = new LoggerButtonListener(this);
     private TitlePanel titlePanel = new TitlePanel();
     private ProgressLoggerOptions options = new ProgressLoggerOptions(buttonListener);
@@ -215,8 +213,8 @@ public class ProgressLoggerFrame extends JFrame {
         Integer selectedDay2 = logNewPlan.getSelectedDay2();
         Integer selectedYear = logNewPlan.getSelectedYear();
         Integer selectedYear2 = logNewPlan.getSelectedYear2();
-        // Convert the Month String to the number value
 
+        // Convert the Month String to the number value
         for (int i = 0; i < 12; i++) {
             if (months[i].equals(logNewPlan.getSelectedMonth())) {
                 dateStartString = logNewPlan.getSelectedYear() + "-" + (i + 1) + "-" + logNewPlan.getSelectedDay().toString();
