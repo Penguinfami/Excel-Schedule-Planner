@@ -6,7 +6,6 @@ public class CreateNewAgenda extends JPanel {
 
     private JTextField inputName;
     private JButton createButton;
-    private SimpleLinkedList<JPanel> errorListPanels;
     private String errors;
     public CreateNewAgenda(LoggerButtonListener listener, String[] errorPossibilities) {
 
@@ -22,30 +21,13 @@ public class CreateNewAgenda extends JPanel {
 
         this.setLayout(new GridLayout(5, 1));
 
-        errorListPanels = new SimpleLinkedList<JPanel>();
-
-
-
-
         JPanel panel = new JPanel();
         panel.setLayout(new GridLayout(4,1));
         JLabel label = new JLabel("<html><h1><b>The schedule name <em>cannot:</em></b></h1></html");
         label.setHorizontalAlignment(SwingConstants.CENTER);
 
         panel.add(label);
-
-        for (int i = 0; i < errorPossibilities.length; i++){
-            if (i != 0 && i % 3 == 0){
-                errorListPanels.add(panel);
-                panel = new JPanel();
-                panel.setLayout(new GridLayout(4,1));
-            }
-            label = (new JLabel("<html><h2><em>-" + errorPossibilities[i]+ "</em></h2></html"));
-            label.setHorizontalAlignment(SwingConstants.CENTER);
-            panel.add(label);
-        }
-        errorListPanels.add(panel);
-
+        
         reAddComponents();
 
     }
