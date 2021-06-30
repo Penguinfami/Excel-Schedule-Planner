@@ -1,25 +1,50 @@
-import javax.swing.JPanel;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import java.awt.Font;
-import java.awt.GridLayout;
-import javax.swing.JComboBox;
-import javax.swing.JTextField;
+import javax.swing.*;
+import java.awt.*;
 
 public class CreateNewAgenda extends JPanel {
 
-    private JLabel errorMsg = new JLabel("<html><h1>Invalid name. A new Schedule was not created</h1></html>");
-    private JComboBox<String> listAgendas;
+
     private JTextField inputName;
     private JButton createButton;
+    private SimpleLinkedList<JPanel> errorListPanels;
+    private String errors;
+    public CreateNewAgenda(LoggerButtonListener listener, String[] errorPossibilities) {
 
-    CreateNewAgenda(LoggerButtonListener listener) {
+        errors = "<html><h1><b>The schedule name <em>cannot:</em></b></h1>";
+        for (String possibleErrors : errorPossibilities){
+            errors+= "<br>" + possibleErrors;
+        }
+        errors += "</html>";
+
         createButton = new JButton("CREATE SCHEDULE");
         createButton.addActionListener(listener);
         createButton.setFont(new Font("Verdana", Font.BOLD, 30));
 
         this.setLayout(new GridLayout(5, 1));
 
+        errorListPanels = new SimpleLinkedList<JPanel>();
+
+
+
+
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(4,1));
+        JLabel label = new JLabel("<html><h1><b>The schedule name <em>cannot:</em></b></h1></html");
+        label.setHorizontalAlignment(SwingConstants.CENTER);
+
+        panel.add(label);
+
+        for (int i = 0; i < errorPossibilities.length; i++){
+            if (i != 0 && i % 3 == 0){
+                errorListPanels.add(panel);
+                panel = new JPanel();
+                panel.setLayout(new GridLayout(4,1));
+            }
+            label = (new JLabel("<html><h2><em>-" + errorPossibilities[i]+ "</em></h2></html"));
+            label.setHorizontalAlignment(SwingConstants.CENTER);
+            panel.add(label);
+        }
+        errorListPanels.add(panel);
 
         reAddComponents();
 
@@ -27,7 +52,7 @@ public class CreateNewAgenda extends JPanel {
 
     private void reAddComponents() {
         this.removeAll();
-        this.add(new JLabel("<html><h1>Create a new schedule</h1><b><h4>Name the new schedule (Max 20 characters):</h4><br></html>"));
+        this.add(new JLabel("<html><h1>Create a new schedule</h1><b><h4>Name the new schedule (Max 30 characters):</h4><br></html>"));
         inputName = new JTextField(20);
         this.add(inputName);
         this.add(createButton);
@@ -39,14 +64,7 @@ public class CreateNewAgenda extends JPanel {
 
     public void displayErrorMsg() {
         reAddComponents();
-        this.add(errorMsg);
-        this.revalidate();
-        this.repaint();
-    }
-
-    public void removeErrorMsg() {
-        reAddComponents();
-        this.remove(errorMsg);
+        JOptionPane.showMessageDialog(this, errors, "Invalid name.", JOptionPane.PLAIN_MESSAGE);
         this.revalidate();
         this.repaint();
     }

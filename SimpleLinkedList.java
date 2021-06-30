@@ -36,6 +36,29 @@ public class SimpleLinkedList<E> {
 
     }
 
+    /** add
+     * Add an item to the end of the list
+     * @param item The item to replace with
+     * @param index the previous item's index
+     */
+    public E replace(E item, int index) {
+
+        Node<E> currentNode = head;
+        while (index > 0 && currentNode != null){
+            currentNode = currentNode.getNext();
+            index--;
+        }
+
+        if (currentNode != null) {
+            currentNode.setItem(item);
+            return item;
+        } else {
+            return null;
+        }
+
+
+    }
+
 
     /** get
      * Get the object from the node at a specific index

@@ -9,6 +9,9 @@ import java.awt.event.ActionEvent;
 import javax.swing.JComboBox;
 import javax.swing.JTextField;
 import java.awt.Font;
+import javax.swing.JRadioButton;
+import javax.swing.ButtonGroup;
+import javax.swing.JOptionPane;
 
 public class EditPlannedActivity extends JPanel implements ActionListener {
 
@@ -40,8 +43,11 @@ public class EditPlannedActivity extends JPanel implements ActionListener {
 
     private JTextField activityInfo;
 
-
     private JButton updateButton;
+
+    private ButtonGroup radioButtons;
+    private JRadioButton completeButton;
+    private JRadioButton incompleteButton;
 
     private JPanel datePanel;
     private JPanel titlePanel;
@@ -50,12 +56,11 @@ public class EditPlannedActivity extends JPanel implements ActionListener {
 
     private Activity currentActivity;
 
+
     public EditPlannedActivity(LoggerButtonListener listener) {
         this.setLayout(new GridLayout(5, 1));
 
-
         datePanel = new JPanel();
-
         datePanel.setLayout(new GridLayout(2, 2));
 
         // set up months list
@@ -119,7 +124,20 @@ public class EditPlannedActivity extends JPanel implements ActionListener {
 
         titlePanel = new JPanel();
         titlePanel.setLayout(new GridLayout(2, 1));
-        titlePanel.add(new JLabel("<html>Title of Activity</html>"));
+        JPanel buttonTitlePanel = new JPanel();
+        buttonTitlePanel.setLayout(new GridLayout(1,4));
+        completeButton = new JRadioButton("Complete");
+        completeButton.addActionListener(this);
+        incompleteButton = new JRadioButton("Incomplete");
+        incompleteButton.addActionListener(this);
+        radioButtons = new ButtonGroup();
+        radioButtons.add(completeButton);
+        radioButtons.add(incompleteButton);
+        buttonTitlePanel.add(new JLabel("<html>Title of Activity</html>"));
+        buttonTitlePanel.add(new JLabel(""));
+        buttonTitlePanel.add(completeButton);
+        buttonTitlePanel.add(incompleteButton);
+        titlePanel.add(buttonTitlePanel);
         titlePanel.add(activityTitle);
 
         infoPanel = new JPanel();
@@ -162,7 +180,7 @@ public class EditPlannedActivity extends JPanel implements ActionListener {
     }
 
     public void displayErrorMessage(String missingComponent) {
-        successLabel.setText("<html><h3>Activity Not Updated Because:<em>" + missingComponent + "</em></h3></html>");
+        JOptionPane.showMessageDialog(this,"<html><h3>Activity Not Updated Because:<em>" + missingComponent + "</em></h3></html>", "Error",JOptionPane.PLAIN_MESSAGE);
         this.revalidate();
     }
 
@@ -207,26 +225,33 @@ public class EditPlannedActivity extends JPanel implements ActionListener {
 
         // have the pre-written text in the text fields as the activity info
         String name = activity.getTitleOfActivity();
-        activityTitle = new JTextField(name);
-        activityTitle.addActionListener(this);
+        activityTitle.setText(name);
 
         String info = activity.getActivityInfo();
-        activityInfo = new JTextField(info);
-        activityInfo.addActionListener(this);
+        activityInfo.setText(info);
 
-        titlePanel.removeAll();
-        titlePanel.add(new JLabel("<html>Title of Activity</html>"));
-        titlePanel.add(activityTitle);
 
-        infoPanel.removeAll();
-        infoPanel.add(new JLabel("<html>Activity Info</html>"));
-        infoPanel.add(activityInfo);
+        if (activity.getDateCompleted() != null){
+            completeButton.setSelected(true);
+            incompleteButton.setSelected(false);
+        } else {
+            incompleteButton.setSelected(true);
+            completeButton.setSelected(false);
+        }
 
     }
 
     public Activity getCurrentActivity() {
         return currentActivity;
 
+    }
+
+    public boolean isComplete(){
+        if (completeButton.isSelected()) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     public String getSelectedMonth() {

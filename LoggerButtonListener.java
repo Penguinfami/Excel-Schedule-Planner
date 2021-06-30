@@ -31,56 +31,70 @@ public class LoggerButtonListener implements ActionListener {
                 parentFrame.logNewActivity();
                 break;
             case "CREATE":
-                System.out.println("CREATE");
                 parentFrame.createNewPlan();
                 break;
             case "VIEW SCHEDULE":
-                System.out.println("VIEW SCHEDULE");
                 parentFrame.viewPlan();
                 break;
             case ("UPDATE ACTIVITY"):
-                System.out.println("UPDATE ACTIVITY");
                 parentFrame.viewUpdateActivity();
                 break;
             case ("SET AS COMPLETE"):
-                System.out.println("SET AS COMPLETE");
                 parentFrame.setCompleteActivity();
                 break;
             case ("DELETE ACTIVITY"):
-                System.out.println("DELETE ACTIVITY");
                 parentFrame.deleteActivity();
                 break;
             case ("CREATE SCHEDULE"):
-                System.out.println("CREATE NEW SCHEDULE");
                 parentFrame.createAgenda();
                 break;
             case ("OPEN SCHEDULE"):
-                System.out.println("OPEN SCHEDULE");
                 parentFrame.openSpecificAgenda();
                 break;
+            case ("RENAME SCHEDULE"):
+                parentFrame.viewRenameAgenda();
+                break;
+            case ("RENAME"):
+                parentFrame.renameAgenda();
+                break;
             case ("DELETE SCHEDULE"):
-                System.out.println("OPEN SCHEDULE");
                 parentFrame.deleteSpecificAgenda();
                 break;
-            case "CREATE NEW SCHEDULE":
-                System.out.println("CREATE NEW SCHEDULE");
+            case "NEW SCHEDULE":
                 parentFrame.viewCreateAgenda();
                 break;
-            case "MANAGE EXISTING SCHEDULE":
-                System.out.println("OPEN EXISTING SCHEDULE");
+            case "MANAGE SCHEDULES":
                 parentFrame.viewManageAgenda();
                 break;
             case "UPDATE":
-                System.out.println("UPDATE");
                 parentFrame.setUpdatedActivity();
                 break;
             case "EDIT ACTIVITY":
-                System.out.println("EDIT ACTIVITY");
                 parentFrame.viewEditActivity();
                 break;
             case "EXIT":
-                System.out.println("CLOSE");
                 parentFrame.closeApplication();
+                break;
+            case "ALL":
+                parentFrame.viewPlan();
+                break;
+            case "COMPLETE ONLY":
+                parentFrame.viewCompleteOnly();
+                break;
+            case "INCOMPLETE ONLY":
+                parentFrame.viewIncompleteOnly();
+                break;
+            case "All":
+                parentFrame.updateActivitySort(0);
+                break;
+            case "Complete Only":
+                parentFrame.updateActivitySort(2);
+                break;
+            case "Incomplete Only":
+                parentFrame.updateActivitySort(1);
+                break;
+            case "TODAY'S ACTIVITIES":
+                parentFrame.viewTodaysActivities();
                 break;
         }
 

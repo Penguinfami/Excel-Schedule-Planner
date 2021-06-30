@@ -1,7 +1,20 @@
 
-
+import java.awt.Color;
 
 public class LoggerTableFormat {
+
+    public static class TableColors {
+        static Color MISSED = Color.decode("#ff6161"); // red
+        static Color TODAY = Color.GREEN;
+        static Color IN_PROGRESS = Color.decode("#aaffb4"); // light green
+        static Color COMPLETE = Color.decode("#13daf6"); // blue
+        static Color NORMAL = Color.WHITE;
+        static Color FILTER_BUTTON = Color.decode("#eaeaea");
+        static Color TODAY_HEADING = Color.decode("#007309"); // darker green
+        static Color IN_PROGRESS_HEADING = Color.decode("#00C410"); // lighter green
+        static Color MISSED_HEADING = Color.decode("#BD0000"); // darker red
+
+    }
 
     public enum ValueType {
         STRING,
@@ -32,5 +45,7 @@ public class LoggerTableFormat {
             "Name", "Info", "Date Created", "Date Completed"};
 
     public static int[] headerWidths = {90, 90, 170, 310, 100, 120};
+
+    public static int[] todaysActivitiesWidths = {300,290};
 
 }

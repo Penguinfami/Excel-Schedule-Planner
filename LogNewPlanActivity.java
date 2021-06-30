@@ -9,6 +9,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.JComboBox;
 import javax.swing.JTextField;
 import java.awt.Font;
+import javax.swing.JOptionPane;
 
 public class LogNewPlanActivity extends JPanel implements ActionListener {
 
@@ -43,9 +44,6 @@ public class LogNewPlanActivity extends JPanel implements ActionListener {
 
     public LogNewPlanActivity(LoggerButtonListener listener) {
         this.setLayout(new GridLayout(5, 1));
-
-    /*JPanel setOptionsPanel = new JPanel();
-    setOptionsPanel.setLayout(new GridLayout(6,1));*/
 
         JPanel datePanel = new JPanel();
 
@@ -162,7 +160,7 @@ public class LogNewPlanActivity extends JPanel implements ActionListener {
     }
 
     public void displayErrorMessage(String missingComponent) {
-        successLabel.setText("<html><h3>New Activity Not Created Because:<em>" + missingComponent + "</em></h3></html>");
+        JOptionPane.showMessageDialog(this,"<html><h3>Reason:<em>" + missingComponent + "</em></h3></html>", "Activity Not Created", JOptionPane.PLAIN_MESSAGE);
         this.revalidate();
     }
 

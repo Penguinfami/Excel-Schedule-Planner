@@ -5,6 +5,7 @@ import javax.swing.JLabel;
 import java.awt.GridLayout;
 import java.awt.Font;
 import javax.swing.JComboBox;
+import java.awt.Color;
 
 public class ManageAgenda extends JPanel {
 
@@ -12,6 +13,7 @@ public class ManageAgenda extends JPanel {
 
     private JPanel buttonPanel = new JPanel();
     private JButton openButton = new JButton("OPEN SCHEDULE");
+    private JButton renameButton = new JButton("RENAME SCHEDULE");
     private JButton deleteButton = new JButton("DELETE SCHEDULE");
 
     private JLabel label = new JLabel("<html><h1>Select an existing scheduler</h1></hmtl>");
@@ -23,11 +25,17 @@ public class ManageAgenda extends JPanel {
         this.add(label);
         buttonPanel.setLayout(new GridLayout(1, 2));
         buttonPanel.add(openButton);
+        buttonPanel.add(renameButton);
         buttonPanel.add(deleteButton);
+        openButton.setBackground(Color.decode("#F2F2F2")); // light gray
+        renameButton.setBackground(Color.decode("#F2F2F2")); // light gray
+        deleteButton.setBackground(Color.decode("#B0B0B0")); // even darker gray
         openButton.addActionListener(listener);
-        openButton.setFont(new Font("Verdana", Font.BOLD, 30));
+        openButton.setFont(new Font("Verdana", Font.BOLD, 27));
+        renameButton.addActionListener(listener);
+        renameButton.setFont(new Font("Verdana", Font.BOLD, 23));
         deleteButton.addActionListener(listener);
-        deleteButton.setFont(new Font("Verdana", Font.BOLD, 30));
+        deleteButton.setFont(new Font("Verdana", Font.BOLD, 20));
 
     }
 

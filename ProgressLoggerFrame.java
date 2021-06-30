@@ -4,6 +4,8 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import java.awt.BorderLayout;
 
+import javax.swing.JOptionPane;
+
 import java.io.IOException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,7 +13,10 @@ import java.io.FileOutputStream;
 
 import java.util.Calendar;
 import java.text.SimpleDateFormat;
-
+import java.time.format.DateTimeFormatter;
+import java.time.LocalDate;
+import java.time.format.ResolverStyle;
+import java.time.format.DateTimeParseException;
 import org.apache.poi.xssf.usermodel.*;
 import org.apache.poi.ss.usermodel.*;
 
@@ -19,12 +24,14 @@ public class ProgressLoggerFrame extends JFrame {
 
     private final String[] columnNames = LoggerTableFormat.headerTitles;
 
+    private JPanel currentPanel;
+
     private LoggerButtonListener buttonListener = new LoggerButtonListener(this);
+    private AllTodayActivities todaysActivities = new AllTodayActivities();
     private TitlePanel titlePanel = new TitlePanel();
     private ProgressLoggerOptions options = new ProgressLoggerOptions(buttonListener);
     private LogNewPlanActivity logNewPlan = new LogNewPlanActivity(buttonListener);
-    private ProgressPlanTable planTable = new ProgressPlanTable();
-
+    private ProgressPlanTable planTable = new ProgressPlanTable(buttonListener);
 
     private UpdatePlannedActivity updateActivity = new UpdatePlannedActivity(buttonListener);
 
@@ -32,7 +39,9 @@ public class ProgressLoggerFrame extends JFrame {
 
     private ManageAgenda manageAgenda = new ManageAgenda(buttonListener);
 
-    private CreateNewAgenda createNewAgenda = new CreateNewAgenda(buttonListener);
+    private CreateNewAgenda createNewAgenda;
+
+    private RenameExistingAgenda renameExistingAgenda;
 
     private PriorityLinkedList<Activity> listOfActivities = new PriorityLinkedList<Activity>();
     private SimpleLinkedList<String> listOfAgendas = new SimpleLinkedList<String>();
@@ -55,15 +64,21 @@ public class ProgressLoggerFrame extends JFrame {
         this.setSize(900, 720);
         this.setResizable(true);
         this.setLayout(new BorderLayout());
-
         loadWorkbook();
+        String[] errorPossibilities = {"be already taken by an existing schedule","be blank", "be named \"" + workbook.getSheetAt(0).getSheetName() + "\"", "be named \"history\"",
+                "start or end with an apostrophe (')", "contain any of the following characters <em> \\ / ? * [ ] : </em>"};
+        createNewAgenda = new CreateNewAgenda(buttonListener, errorPossibilities);
+        renameExistingAgenda = new RenameExistingAgenda(buttonListener, errorPossibilities);
         cellStyles = new LoggerCellStyles(workbook);
         styleOrder = cellStyles.getStyleOrder();
         this.add(titlePanel, BorderLayout.NORTH);
         this.add(options, BorderLayout.SOUTH);
-        viewManageAgenda();
         this.setVisible(true);
         this.requestFocusInWindow();
+
+        currentPanel = manageAgenda;
+        viewManageAgenda();
+
 
     }
 
@@ -139,7 +154,7 @@ public class ProgressLoggerFrame extends JFrame {
                         if (LoggerTableFormat.typeOrder[j] == LoggerTableFormat.ValueType.DATE) {
                             if (cell.getCellType() == CellType.STRING) {
                                 args[j] = cell.getStringCellValue();
-                            } else if (cell.getCellType() == CellType.NUMERIC) { // if the user set a title as a number, convert it to a string
+                            } else if (cell.getCellType() == CellType.NUMERIC) { // if the date is displayed as a number, convert it to a string
                                 args[j] = dateFormatter.format(cell.getDateCellValue());
                             }
                         } else if (LoggerTableFormat.typeOrder[j] == LoggerTableFormat.ValueType.STRING) {
@@ -151,9 +166,25 @@ public class ProgressLoggerFrame extends JFrame {
                         }
 
                     }
-                    String[] date = args[0].split("-"); // using start date
 
-                    int priority = 99999999 - (Integer.parseInt(date[0]) * 10000 + Integer.parseInt(date[1]) * 100 + Integer.parseInt(date[2]));
+                    // get today's date, start date and end date as Date objects
+                    Calendar today = Calendar.getInstance();
+                    Date todaysDate = new Date(today.get(Calendar.YEAR), today.get(Calendar.MONTH) + 1, today.get(Calendar.DAY_OF_MONTH));
+                    String[] date = args[0].split("-"); // using start date
+                    Date startDate = new Date(Integer.parseInt(date[0]), Integer.parseInt(date[1]), Integer.parseInt(date[2]));
+                    date = args[1].split("-"); // using end date
+
+                    Date endDate = new Date(Integer.parseInt(date[0]), Integer.parseInt(date[1]), Integer.parseInt(date[2]));
+                    int priority;
+
+                    // if the start date has already passed / is today, the priority is based on end date
+                    // if the start date is still in the future, the priority is based on start date
+                    if (todaysDate.compareTo(startDate) <= 0){
+                        priority = 99999999 - (endDate.getYear() * 10000 + endDate.getMonth() * 100 + endDate.getDay());
+                    } else {
+                        priority =  -(startDate.getYear() * 10000 + startDate.getMonth() * 100 + startDate.getDay());
+                    }
+
                     listOfActivities.add(new Activity(args[0], args[1], args[2], args[3], args[4], args[5]), priority);
                 }
 
@@ -165,30 +196,85 @@ public class ProgressLoggerFrame extends JFrame {
 
     }
 
+    public void viewTodaysActivities(){
+        currentPanel.setVisible(false);
+        currentPanel = todaysActivities;
+        this.add(todaysActivities, BorderLayout.CENTER);
+        String[][][] array = getTodaysActivities();
+        todaysActivities.updateTable(array[0], array[1], array[2]);
+        todaysActivities.setVisible(true);
+        this.revalidate();
+    }
+
+    public String[][][] getTodaysActivities(){
+        PriorityLinkedList<String[]> activityList = new PriorityLinkedList<String[]>();
+        PriorityLinkedList<String[]> endsLaterList = new PriorityLinkedList<String[]>();
+        PriorityLinkedList<String[]> lateList = new PriorityLinkedList<String[]>();
+        Activity activity;
+        Date endDate;
+        Date startDate;
+        Calendar today = Calendar.getInstance();
+        int priority;
+        String agendaName;
+        Date todaysDate = new Date(today.get(Calendar.YEAR), today.get(Calendar.MONTH) + 1, today.get(Calendar.DAY_OF_MONTH));
+        for (int i = 0; i < listOfAgendas.size(); i++){
+            createListOfActivities(listOfAgendas.get(i));
+            agendaName = "<em>" + listOfAgendas.get(i) + ":</em><br>";
+            for (int j = 0; j < listOfActivities.size(); j++){
+                activity = listOfActivities.get(j);
+                endDate = new Date(activity.getDateEnd());
+                startDate = new Date(activity.getDateStart());
+                priority = 99999999 - (endDate.getYear() * 10000 + endDate.getMonth() * 100 + endDate.getDay());
+                if (activity.getDateCompleted() == null && endDate.compareTo(todaysDate) == 0){
+                    activityList.add(new String[]{ agendaName + activity.getTitleOfActivity(), activity.getActivityInfo()}, priority);
+                } else if (activity.getDateCompleted() == null && startDate.compareTo(todaysDate) >= 0 && endDate.compareTo(todaysDate) < 0){
+                    endsLaterList.add(new String[]{agendaName + activity.getTitleOfActivity(), activity.getActivityInfo()}, priority);
+                } else if (activity.getDateCompleted() == null && endDate.compareTo(todaysDate) > 0){
+                    lateList.add(new String[]{agendaName + activity.getTitleOfActivity(), activity.getActivityInfo()}, priority);
+                }
+            }
+        }
+        String[][] activitiesArray = new String[activityList.size()][2];
+        for (int i = 0; i < activityList.size(); i++){
+            activitiesArray[i] = activityList.get(i);
+        }
+
+        String[][] endsLaterArray = new String[endsLaterList.size()][2];
+        for (int i = 0; i < endsLaterList.size(); i++){
+            endsLaterArray[i] = endsLaterList.get(i);
+        }
+
+        String[][] lateArray = new String[lateList.size()][2];
+        for (int i = 0; i < lateList.size(); i++){
+            lateArray[i] = lateList.get(i);
+        }
+
+        // clear the list of activities to return to what it was before
+        listOfActivities.clear();
+        createListOfActivities(nameCurrentAgenda);
+
+        return new String[][][] {activitiesArray, endsLaterArray, lateArray};
+    }
+
 
     public void viewPlan() {
         if (currentSheet == null) return;
         this.add(planTable, BorderLayout.CENTER);
         planTable.createTable(createActivitiesArray());
+        currentPanel.setVisible(false);
+        currentPanel = planTable;
         planTable.setVisible(true);
-        manageAgenda.setVisible(false);
-        logNewPlan.setVisible(false);
-        updateActivity.setVisible(false);
-        createNewAgenda.setVisible(false);
-        editActivity.setVisible(false);
-
+        this.revalidate();
     }
 
     public void logNewActivity() {
         if (currentSheet == null) return;
-        this.add(logNewPlan, BorderLayout.CENTER);
         logNewPlan.removeSuccessMessage();
-        manageAgenda.setVisible(false);
-        planTable.setVisible(false);
+        currentPanel.setVisible(false);
+        currentPanel = logNewPlan;
         logNewPlan.setVisible(true);
-        updateActivity.setVisible(false);
-        createNewAgenda.setVisible(false);
-        editActivity.setVisible(false);
+        this.add(logNewPlan, BorderLayout.CENTER);
+        this.revalidate();
 
     }
 
@@ -214,6 +300,7 @@ public class ProgressLoggerFrame extends JFrame {
         Integer selectedYear = logNewPlan.getSelectedYear();
         Integer selectedYear2 = logNewPlan.getSelectedYear2();
 
+
         // Convert the Month String to the number value
         for (int i = 0; i < 12; i++) {
             if (months[i].equals(logNewPlan.getSelectedMonth())) {
@@ -237,11 +324,21 @@ public class ProgressLoggerFrame extends JFrame {
             selectedYear2 = selectedYear;
         }
 
-
-
         Activity newActivity = new Activity(dateStartString, dateEndString, logNewPlan.getTitle(), logNewPlan.getActivityInfo(), todayString, null);
 
-        int priority = 99999999 - (selectedYear * 10000 + selectedMonth * 100 + selectedDay); // earlier dates have higher priority
+
+        Date startDate = new Date(selectedYear,selectedMonth, selectedDay);
+        Date todaysDate = new Date(today.get(Calendar.YEAR), today.get(Calendar.MONTH) + 1, today.get(Calendar.DAY_OF_MONTH));
+
+        int priority;
+
+        // if the start date has already passed / is today, the priority is based on end date
+        // if the start date is still in the future, the priority is based on start date
+        if (todaysDate.compareTo(startDate) <= 0){
+            priority = 99999999 - (selectedYear2 * 10000 + selectedMonth2 * 100 + selectedDay2);
+        } else {
+            priority =  -(selectedYear * 10000 + selectedMonth * 100 + selectedDay);
+        }
 
         listOfActivities.add(newActivity, priority);
         System.out.print("Created new plan");
@@ -283,6 +380,7 @@ public class ProgressLoggerFrame extends JFrame {
 
         StringBuilder errorComponents = new StringBuilder();
 
+
         if (newActivityTitle.trim().equals("")) {
             errorComponents.append("<br>No Title of Activity");
         }
@@ -295,14 +393,38 @@ public class ProgressLoggerFrame extends JFrame {
             }
         }
 
+        boolean startDateExist = true;
+
         if (selectedMonth.equals("-")) {
             errorComponents.append("<br>Starting Month Is Not Set");
+            startDateExist = false;
         }
         if (selectedDay == null) {
             errorComponents.append("<br>Starting Day Of Month Is Not Set");
+            startDateExist = false;
         }
         if (selectedYear == null) {
             errorComponents.append("<br>Starting Year Is Not Set");
+            startDateExist = false;
+        }
+
+        if (startDateExist){
+            try{// check if the date exists and is valid
+                DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
+                String[] months = {"-", "January", "February", "March", "April", "May", "June", "July", "August", "September",
+                        "October", "November", "December"};
+                for (int i = 0; i < months.length; i++){
+                    if (months[i].equals(selectedMonth)){
+                        String monthStr = ""+i + "";
+                        if (i < 10){
+                            monthStr = "0"+ i;
+                        }
+                        LocalDate.parse(selectedYear+ "-" + monthStr + "-" + selectedDay, dateTimeFormatter);
+                    }
+                }
+            }catch(DateTimeParseException e){
+                errorComponents.append("<br>" + selectedYear + "-" + selectedMonth + "-" + selectedDay + " Is Not A Real Date");
+            }
         }
 
         if (!(selectedMonth2.equals("-") && selectedDay2 == null && selectedYear2 == null)) { // if not all end date components are left blank
@@ -322,6 +444,23 @@ public class ProgressLoggerFrame extends JFrame {
 
             if (!isMissingComponent) {
 
+                try{ // check if the date exists and is valid
+                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("uuuu-MM-dd").withResolverStyle(ResolverStyle.STRICT);
+                    String[] months = {"-", "January", "February", "March", "April", "May", "June", "July", "August", "September",
+                            "October", "November", "December"};
+                    for (int i = 0; i < months.length; i++){
+                        if (months[i].equals(selectedMonth2)){
+                            String monthStr = ""+i + "";
+                            if (i < 10){
+                                monthStr = "0"+ i;
+                            }
+                            LocalDate.parse(selectedYear2 + "-" + monthStr+ "-" + selectedDay2, dateTimeFormatter);
+                        }
+                    }
+                }catch(DateTimeParseException e){
+                    errorComponents.append("<br>" + selectedYear2 + "-" + selectedMonth2 + "-" + selectedDay2 + " Is Not A Real Date");
+                }
+
                 if (selectedYear > selectedYear2) {
                     errorComponents.append("<br>End Year Cannot Be Earlier Than Start Date");
                 } else if (selectedYear.equals(selectedYear2)) { // if the start and end years are the same
@@ -336,7 +475,7 @@ public class ProgressLoggerFrame extends JFrame {
                             }
                             break;
                         } else if (month.equals(selectedMonth2)) { // if the end month is earlier than the start month (is first in the month list)
-                            errorComponents.append("<br>End Month Cannot Be Earlier Than Start Date" + selectedMonth + selectedMonth2);
+                            errorComponents.append("<br>End Month Cannot Be Earlier Than Start Date").append(selectedMonth).append(selectedMonth2);
                         }
                     }
                 }
@@ -355,41 +494,76 @@ public class ProgressLoggerFrame extends JFrame {
 
     public void viewUpdateActivity() {
         if (currentSheet == null) return;
-        String[] activityNamesDate = new String[listOfActivities.size() + 1];
-        activityNamesDate[0] = " ";
-
-        String title;
-
-        for (int i = 1; i < activityNamesDate.length; i++) {
-            title = listOfActivities.get(i - 1).getTitleOfActivity();
-            activityNamesDate[i] = listOfActivities.get(i - 1).getDateStart() + " - " +
-                    (title);
-
-        }
-
-        updateActivity.updatePanel(activityNamesDate);
-        this.add(updateActivity, BorderLayout.CENTER);
+        updateActivitySort(0);
         updateActivity.removeSuccessLabel();
+        currentPanel.setVisible(false);
+        currentPanel = updateActivity;
         updateActivity.setVisible(true);
-        manageAgenda.setVisible(false);
-        planTable.setVisible(false);
-        logNewPlan.setVisible(false);
-        createNewAgenda.setVisible(false);
-        editActivity.setVisible(false);
+        this.add(updateActivity, BorderLayout.CENTER);
+        this.revalidate();
 
+    }
 
+    public void updateActivitySort(int sortType){ // 0 = all, 1 = incomplete, 2 = complete
+        if (sortType == 0){ // display all activities
+            String[] nameDateArray = new String[listOfActivities.size() + 1];
+            nameDateArray[0] = " ";
+
+            String title;
+
+            for (int i = 1; i < nameDateArray.length; i++) {
+                title = listOfActivities.get(i - 1).getTitleOfActivity();
+                nameDateArray[i] = listOfActivities.get(i - 1).getDateStart() + " - " +
+                        (title);
+            }
+            updateActivity.updatePanel(nameDateArray);
+        } else if (sortType == 1){// sort by incomplete
+            int index = 1;
+            String[][] activityArray = getCompletedActivitiesArray(false);
+            String[] nameDateArray = new String[activityArray.length + 1];
+            nameDateArray[0] = " ";
+            for (int i = 0; i < listOfActivities.size(); i++){
+                Activity activity = listOfActivities.get(i);
+                if (activity.getDateCompleted() == null){
+                    nameDateArray[index] = activity.getDateStart() + " - " +
+                            activity.getTitleOfActivity();
+                    index++;
+                }
+            }
+            updateActivity.updatePanel(nameDateArray);
+
+        } else if (sortType == 2){ // sort by complete
+            int index = 1;
+            String[][] activityArray = getCompletedActivitiesArray(true);
+            String[] nameDateArray = new String[activityArray.length + 1];
+            nameDateArray[0] = " ";
+            for (int i = 0; i < listOfActivities.size(); i++){
+                Activity activity = listOfActivities.get(i);
+                if (activity.getDateCompleted() != null){
+                    nameDateArray[index] = activity.getDateStart() + " - " +
+                            activity.getTitleOfActivity();
+                    index++;
+                }
+            }
+            updateActivity.updatePanel(nameDateArray);
+        }
     }
 
     public void setCompleteActivity() {
         int index = updateActivity.getSelectedIndex();
         if (index != 0) {
             Calendar today = Calendar.getInstance();
-            Activity selectedActivity = listOfActivities.get(index - 1);
-            String dateCompletedString = today.get(Calendar.YEAR) + "-" + (today.get(Calendar.MONTH) + 1) + "-" + today.get(Calendar.DAY_OF_MONTH);
+            String name = updateActivity.getSelectedString();
+            name = name.substring(name.indexOf(" - ") + 3); // remove the date and dash
+            Activity selectedActivity = listOfActivities.get(0);
+            for (int i = 0; i < listOfActivities.size(); i++){
+                selectedActivity = listOfActivities.get(i);
+                if (name.equals(selectedActivity.getTitleOfActivity())){
+                    break;
+                }
+            }            String dateCompletedString = today.get(Calendar.YEAR) + "-" + (today.get(Calendar.MONTH) + 1) + "-" + today.get(Calendar.DAY_OF_MONTH);
             selectedActivity.setDateCompleted(dateCompletedString);
-            //planTable.createTable(createActivitiesArray());
             updateWorkSheet();
-            String name = selectedActivity.getTitleOfActivity();
             updateActivity.displaySuccessLabel("<html><h1>Activity <em>" + name + "</em> Completed!</h1></html>");
         }
     }
@@ -398,30 +572,49 @@ public class ProgressLoggerFrame extends JFrame {
         if (currentSheet == null) return;
         int index = updateActivity.getSelectedIndex();
         if (index != 0) {
-            Activity chosenActivity = listOfActivities.get(index - 1);
+            String listName = updateActivity.getSelectedString();
+            listName = listName.substring(listName.indexOf(" - ") + 3); // remove the date and dash
+            Activity chosenActivity = listOfActivities.get(0);
+            for (int i = 0; i < listOfActivities.size(); i++){
+                chosenActivity = listOfActivities.get(i);
+                if (listName.equals(chosenActivity.getTitleOfActivity())){
+                    break;
+                }
+            }
             editActivity.setUpActivity(chosenActivity);
             editActivity.removeSuccessMessage();
             this.add(editActivity, BorderLayout.CENTER);
             updateActivity.removeSuccessLabel();
-            updateActivity.setVisible(false);
-            manageAgenda.setVisible(false);
-            planTable.setVisible(false);
-            logNewPlan.setVisible(false);
-            createNewAgenda.setVisible(false);
+            currentPanel.setVisible(false);
+            currentPanel = editActivity;
             editActivity.setVisible(true);
+            this.revalidate();
+
         }
     }
 
     public void deleteActivity() {
         int index = updateActivity.getSelectedIndex();
 
+
         if (index != 0) {
-            String name = listOfActivities.get(index - 1).getTitleOfActivity();
-            listOfActivities.delete(index - 1); // delete the activity
-            planTable.createTable(createActivitiesArray());
-            updateWorkSheet();
-            viewUpdateActivity(); // act as a refresher for an updated combo box
-            updateActivity.displaySuccessLabel("<html><h1>The Activity <em>" + name + "</em> Has Been Deleted.</h1></html>");
+            String name = updateActivity.getSelectedString();
+            name = name.substring(name.indexOf(" - ") + 3); // remove the date and dash
+            Activity chosenActivity = listOfActivities.get(0);
+            for (int i = 0; i < listOfActivities.size(); i++){
+                chosenActivity = listOfActivities.get(i);
+                if (name.equals(chosenActivity.getTitleOfActivity())){
+                    break;
+                }
+            }
+            int confirmation = JOptionPane.showConfirmDialog(this, "<html>Are you sure you want to delete the activity \"" + chosenActivity.getTitleOfActivity() + "\"?</html>", "Confirmation", JOptionPane.YES_NO_OPTION);
+
+            if (confirmation == JOptionPane.YES_OPTION) {
+                listOfActivities.delete(listOfActivities.indexOf(chosenActivity)); // delete the activity
+                updateWorkSheet();
+                viewUpdateActivity(); // act as a refresher for an updated combo box
+                updateActivity.displaySuccessLabel("<html><h1>The Activity <em>" + name + "</em> Has Been Deleted.</h1></html>");
+            }
         }
 
     }
@@ -433,11 +626,8 @@ public class ProgressLoggerFrame extends JFrame {
             return;
         }
 
-
         // if all inputs are valid
 
-        Calendar today = Calendar.getInstance();
-        String todayString = today.get(Calendar.YEAR) + "-" + (today.get(Calendar.MONTH) + 1) + "-" + today.get(Calendar.DAY_OF_MONTH);
         String[] months = {"January", "February", "March", "April", "May", "June", "July", "August", "September",
                 "October", "November", "December"};
         String dateStartString = "";
@@ -476,11 +666,36 @@ public class ProgressLoggerFrame extends JFrame {
 
         Activity oldActivity = editActivity.getCurrentActivity();
 
-        Activity newActivity = new Activity(dateStartString, dateEndString, editActivity.getTitle(), editActivity.getActivityInfo(), oldActivity.getDateCreated(), oldActivity.getDateCompleted());
+        // if the activity completion is to be edited
+        Calendar today = Calendar.getInstance();
+        String todayString = today.get(Calendar.YEAR) + "-" + (today.get(Calendar.MONTH) + 1) + "-" + today.get(Calendar.DAY_OF_MONTH);
+        String completedDate;
+        if (editActivity.isComplete()){
+            if (oldActivity.getDateCompleted() != null){
+                completedDate = oldActivity.getDateCompleted();
+            } else {
+                completedDate = todayString;
+            }
+        } else {
+            completedDate = null;
+        }
+
+        Activity newActivity = new Activity(dateStartString, dateEndString, editActivity.getTitle(), editActivity.getActivityInfo(), oldActivity.getDateCreated(), completedDate);
 
         listOfActivities.delete(oldActivity);
 
-        int priority = 99999999 - (selectedYear * 10000 + selectedMonth * 100 + selectedDay); // earlier dates have higher priority
+        Date startDate = new Date(selectedYear,selectedMonth, selectedDay);
+        Date todaysDate = new Date(today.get(Calendar.YEAR), today.get(Calendar.MONTH) + 1, today.get(Calendar.DAY_OF_MONTH));
+
+        int priority;
+
+        // if the start date has already passed / is today, the priority is based on end date
+        // if the start date is still in the future, the priority is based on start date
+        if (todaysDate.compareTo(startDate) <= 0){
+            priority = 99999999 - (selectedYear2 * 10000 + selectedMonth2 * 100 + selectedDay2);
+        } else {
+            priority =  -(selectedYear * 10000 + selectedMonth * 100 + selectedDay);
+        }
 
         listOfActivities.add(newActivity, priority);
 
@@ -570,19 +785,14 @@ public class ProgressLoggerFrame extends JFrame {
     }
 
     public void viewManageAgenda() {
-
         String[] listNames = getCreatedAgendas();
-
-        this.add(manageAgenda, BorderLayout.CENTER);
+        currentPanel.setVisible(false);
+        currentPanel = manageAgenda;
         manageAgenda.setVisible(true);
         manageAgenda.updateComboBox(listNames);
-        createNewAgenda.setVisible(false);
-        updateActivity.setVisible(false);
-        planTable.setVisible(false);
-        logNewPlan.setVisible(false);
-        editActivity.setVisible(false);
         manageAgenda.setSuccessLabel("");
-
+        this.add(manageAgenda, BorderLayout.CENTER);
+        this.revalidate();
 
     }
 
@@ -590,7 +800,6 @@ public class ProgressLoggerFrame extends JFrame {
         System.out.println("opening new agenda");
         String nameOfAgenda = manageAgenda.getSelectedAgenda();
         if (nameOfAgenda.trim().equals("")) return;
-        //planTable.createTable(createActivitiesArray());
         nameCurrentAgenda = nameOfAgenda.trim();
         titlePanel.updateAgendaName(nameCurrentAgenda);
         currentSheet = workbook.getSheet(nameCurrentAgenda);
@@ -600,11 +809,9 @@ public class ProgressLoggerFrame extends JFrame {
 
     public void openSpecificAgenda(String name) {
         System.out.println("opening new agenda");
-        String nameOfAgenda = name;
-        if (nameOfAgenda.trim().equals("")) return;
-        createListOfActivities(nameOfAgenda);
-        //planTable.createTable(createActivitiesArray());
-        nameCurrentAgenda = nameOfAgenda;
+        if (name.trim().equals("")) return;
+        createListOfActivities(name);
+        nameCurrentAgenda = name;
         titlePanel.updateAgendaName(nameCurrentAgenda);
         currentSheet = workbook.getSheet(nameCurrentAgenda);
         manageAgenda.setSuccessLabel("Opened: " + nameCurrentAgenda);
@@ -614,6 +821,10 @@ public class ProgressLoggerFrame extends JFrame {
         System.out.println("deleting agenda");
         String nameOfAgenda = manageAgenda.getSelectedAgenda();
         if (nameOfAgenda.trim().equals("")) return;
+
+        int confirmation = JOptionPane.showConfirmDialog(this, "<html>Are you sure you want to delete the schedule \"" + nameOfAgenda + "\"?</html>", "Confirmation", JOptionPane.YES_NO_OPTION);
+
+        if (confirmation != JOptionPane.YES_OPTION)return;
 
         if (nameOfAgenda.trim().equals(nameCurrentAgenda)) {
             nameCurrentAgenda = "";
@@ -633,19 +844,15 @@ public class ProgressLoggerFrame extends JFrame {
 
         manageAgenda.setSuccessLabel("Deleted: " + nameOfAgenda);
 
-
     }
 
 
     public void viewCreateAgenda() {
-        this.add(createNewAgenda, BorderLayout.CENTER);
+        currentPanel.setVisible(false);
+        currentPanel = createNewAgenda;
         createNewAgenda.setVisible(true);
-        createNewAgenda.removeErrorMsg();
-        manageAgenda.setVisible(false);
-        updateActivity.setVisible(false);
-        planTable.setVisible(false);
-        logNewPlan.setVisible(false);
-        editActivity.setVisible(false);
+        this.add(createNewAgenda, BorderLayout.CENTER);
+        this.revalidate();
 
     }
 
@@ -654,27 +861,18 @@ public class ProgressLoggerFrame extends JFrame {
         String newAgendaName = createNewAgenda.getTextField().trim();
         String[] listOfTakenNames = getCreatedAgendas();
 
-        if (newAgendaName.trim().equals("") || newAgendaName.trim().equals(workbook.getSheetAt(0).getSheetName())) {
+        if (newAgendaName.length() > 30) {
+            newAgendaName = newAgendaName.substring(0, 30);
+        }
+
+        if (!isValidAgendaName(newAgendaName)){
             createNewAgenda.displayErrorMsg();
             return;
         }
 
-        if (newAgendaName.length() > 20) {
-            newAgendaName = newAgendaName.substring(0, 20);
-        }
-        for (String listOfTakenName : listOfTakenNames) {
-            if (listOfTakenName.trim().equals(newAgendaName)) {
-                createNewAgenda.displayErrorMsg();
-                System.out.println("ERROR NAME ALREADY TAKEN");
-                return;
-            }
-        }
-
-        createNewAgenda.removeErrorMsg();
         createNewAgenda.newScheduleMsg();
 
         try {
-
 
             FileOutputStream fileOutput = new FileOutputStream("MyWorkbook.xlsx");
 
@@ -690,14 +888,12 @@ public class ProgressLoggerFrame extends JFrame {
 
             row.setHeightInPoints(LoggerTableFormat.RowHeight.headerHeight);
 
-
             for (int i = 0; i < columnNames.length; i++) {
                 XSSFCell cell = row.createCell(i);
                 cell.setCellValue(columnNames[i]);
                 cell.setCellStyle(cellStyles.getHeaderStyle());
                 currentSheet.setColumnWidth(i, LoggerTableFormat.headerWidths[i] * 55);
             }
-
 
             listOfAgendas.add(newAgendaName);
 
@@ -711,6 +907,7 @@ public class ProgressLoggerFrame extends JFrame {
         }
     }
 
+
     public String[] getCreatedAgendas() {
         String[] listAgendaNames = new String[listOfAgendas.size()];
 
@@ -721,13 +918,112 @@ public class ProgressLoggerFrame extends JFrame {
         return listAgendaNames;
     }
 
+    public void viewRenameAgenda(){
+        String agendaName = manageAgenda.getSelectedAgenda();
+        if (agendaName == null || agendaName.equals("")) return;
+        currentPanel.setVisible(false);
+        currentPanel = renameExistingAgenda;
+        renameExistingAgenda.updateScheduleCurrentName(agendaName);
+        renameExistingAgenda.refreshComponents();
+        renameExistingAgenda.setVisible(true);
+        this.add(renameExistingAgenda, BorderLayout.CENTER);
+        this.revalidate();
+    }
+
+    public void renameAgenda(){
+        String oldName = renameExistingAgenda.getPreviousName();
+        String newName = renameExistingAgenda.getNewName();
+
+        if (newName.length() > 30){
+            newName = newName.substring(0,30);
+        }
+        if (!isValidAgendaName(newName)){
+            renameExistingAgenda.displayErrorMsg();
+            return;
+        }
+
+
+        int index = workbook.getSheetIndex(oldName);
+
+        workbook.setSheetName(index,newName);
+
+        listOfAgendas.replace(newName, index - 1);
+
+        updateWorkSheet();
+
+        renameExistingAgenda.refreshComponents();
+
+        renameExistingAgenda.successfulRenameMsg(oldName, newName);
+
+        renameExistingAgenda.updateScheduleCurrentName(newName);
+
+        if (oldName.equals(nameCurrentAgenda)){
+            titlePanel.updateAgendaName(newName);
+        }
+
+
+    }
+
+
+    public boolean isValidAgendaName(String newAgendaName){
+        String[] listOfTakenNames = getCreatedAgendas();
+
+        if (newAgendaName.trim().equals("") || newAgendaName.trim().equals(workbook.getSheetAt(0).getSheetName())
+                || newAgendaName.toLowerCase().trim().equals("history") || newAgendaName.startsWith("'") || newAgendaName.endsWith("'")) {
+            return false;
+        }
+
+        String[] forbiddenChars = {"/", "\\", "?", "*", "[", "]"};
+
+        for ( String currentChar : forbiddenChars){
+            if (newAgendaName.contains(currentChar)){
+                return false;
+            }
+        }
+        for (String listOfTakenName : listOfTakenNames) {
+            if (listOfTakenName.trim().equals(newAgendaName)) {
+                System.out.println("ERROR NAME ALREADY TAKEN");
+                return false;
+            }
+        }
+        return true;
+    }
+
     public String[][] createActivitiesArray() {
         String[][] array = new String[listOfActivities.size()][numColumns];
-
 
         for (int i = 0; i < listOfActivities.size(); i++) {
             array[i] = listOfActivities.get(i).getActivityArray();
 
+        }
+        return array;
+    }
+
+    public void viewCompleteOnly(){
+        planTable.createTable(getCompletedActivitiesArray(true));
+    }
+
+    public void viewIncompleteOnly(){
+        planTable.createTable(getCompletedActivitiesArray(false));
+    }
+
+    public String[][] getCompletedActivitiesArray(boolean isCompleted){
+        SimpleLinkedList<Activity> linkedList = new SimpleLinkedList<>();
+
+        Activity currentActivity;
+        for (int i = 0; i < listOfActivities.size();i++){
+            currentActivity = listOfActivities.get(i);
+            if (currentActivity.getDateCompleted() != null && isCompleted){
+                linkedList.add(currentActivity);
+            } else if (currentActivity.getDateCompleted() == null && !isCompleted){
+                linkedList.add(currentActivity);
+            }
+        }
+
+        String[][] array = new String[linkedList.size()][numColumns];
+
+        for (int i = 0; i < array.length; i++){
+            array[i] = linkedList.get(i).getActivityArray();
         }
 
         return array;

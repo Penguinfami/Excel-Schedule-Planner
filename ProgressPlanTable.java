@@ -14,10 +14,14 @@ import java.util.Calendar;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Font;
+import javax.swing.JButton;
+import java.awt.ComponentOrientation;
+import java.awt.FlowLayout;
 
 public class ProgressPlanTable extends JPanel {
 
     private JTable table;
+
     // String dS, String tS, String dE, String tE,
 // String tOA,String aI, String dC, String tC, String dCo, String tCo
     private String[] columnNames = LoggerTableFormat.headerTitles;
@@ -27,19 +31,35 @@ public class ProgressPlanTable extends JPanel {
     private int infoIndex;
     private int endDateIndex;
     private int startDateIndex;
-
-    private static class TableColors {
-        static Color MISSED = Color.decode("#ff6161"); // red
-        static Color TODAY = Color.GREEN;
-        static Color IN_PROGRESS = Color.decode("#aaffb4"); // light green
-        static Color COMPLETE = Color.decode("#13daf6"); // blue
-        static Color NORMAL = Color.WHITE;
+    private JButton displayIncompleteButton;
+    private JButton displayCompleteButton;
+    private JButton displayAllButton;
+    private LegendPanel legend;
+    private JScrollPane pane;
 
 
-    }
-
-    public ProgressPlanTable() {
+    public ProgressPlanTable(LoggerButtonListener listener) {
         this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+        this.displayAllButton = new JButton("ALL");
+        displayAllButton.addActionListener(listener);
+        displayAllButton.setBackground(LoggerTableFormat.TableColors.FILTER_BUTTON);
+        this.displayIncompleteButton = new JButton("INCOMPLETE ONLY");
+        displayIncompleteButton.addActionListener(listener);
+        displayIncompleteButton.setBackground(LoggerTableFormat.TableColors.FILTER_BUTTON);
+        this.displayCompleteButton = new JButton("COMPLETE ONLY");
+        displayCompleteButton.addActionListener(listener);
+        displayCompleteButton.setBackground(LoggerTableFormat.TableColors.FILTER_BUTTON);
+        legend = new LegendPanel();
+        legend.setPreferredSize(new Dimension(900,30));
+        legend.setLayout(new FlowLayout(FlowLayout.RIGHT));
+        legend.setComponentOrientation(ComponentOrientation.RIGHT_TO_LEFT);
+        legend.add(displayAllButton);
+        legend.add(displayCompleteButton);
+        legend.add(displayIncompleteButton);
+        table = new JTable();
+        pane = new JScrollPane();
+        this.add(table);
+        this.add(pane);
         for (int i = 0; i < LoggerTableFormat.roleOrder.length; i++) {
             switch (LoggerTableFormat.roleOrder[i]) {
                 case DATE_COMPLETED:
@@ -82,13 +102,10 @@ public class ProgressPlanTable extends JPanel {
                     break;
             }
         }
-        createTable(strArray);
-
     }
 
-    public void createTable(final String[][] strArray) {
-
-        LegendPanel legend = new LegendPanel();
+    public void createTable( String[][] strArray) {
+        this.removeAll();
 
         // add the html to wrap the title/info strings in the table
         for (int i = 0; i < strArray.length; i++) {
@@ -110,16 +127,16 @@ public class ProgressPlanTable extends JPanel {
                 Date todaysDate = new Date(intArray);
 
                 if (strArray[row][dateCompletedIndex] != null && !strArray[row][dateCompletedIndex].equals("")) {
-                    c.setBackground(TableColors.COMPLETE);
+                    c.setBackground(LoggerTableFormat.TableColors.COMPLETE);
                 } else {
                     if (todaysDate.compareTo(endDate) == -1) {
-                        c.setBackground(TableColors.MISSED); // light red
+                        c.setBackground(LoggerTableFormat.TableColors.MISSED); // light red
                     } else if (todaysDate.compareTo(endDate) == 0) {
-                        c.setBackground(TableColors.TODAY);
+                        c.setBackground(LoggerTableFormat.TableColors.TODAY);
                     } else if ((todaysDate.compareTo(startDate) <= 0 && todaysDate.compareTo(endDate) > 0)) {
-                        c.setBackground(TableColors.IN_PROGRESS);
+                        c.setBackground(LoggerTableFormat.TableColors.IN_PROGRESS);
                     } else {
-                        c.setBackground(TableColors.NORMAL);
+                        c.setBackground(LoggerTableFormat.TableColors.NORMAL);
                     }
                 }
 
@@ -145,22 +162,20 @@ public class ProgressPlanTable extends JPanel {
         for (int i = 0; i < columnNames.length; i++) {
             TableColumn column = table.getColumnModel().getColumn(i);
             column.setPreferredWidth(LoggerTableFormat.headerWidths[i]);
-
         }
 
-        table.setPreferredScrollableViewportSize(new Dimension(800, 470));
-
-        this.removeAll();
+        this.setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        //table.setPreferredScrollableViewportSize(new Dimension(800, 430));
 
-        JScrollPane pane = new JScrollPane(table);
-
+        pane = new JScrollPane(table);
+        pane.setPreferredSize(new Dimension(900,500));
         this.add(legend);
-        this.add(Box.createRigidArea(new Dimension(10, 7)));
         this.add(pane);
 
-        legend.repaint();
+        this.revalidate();
+
 
     }
 
@@ -172,89 +187,34 @@ public class ProgressPlanTable extends JPanel {
             Font legendFont = new Font("Arial", Font.BOLD, 12);
 
             // draw the squares
-            g.setColor(TableColors.COMPLETE);
-            g.fillRect(50, 0, 15, 15);
-            g.setColor(TableColors.TODAY);
-            g.fillRect(260, 0, 15, 15);
-            g.setColor(TableColors.IN_PROGRESS);
-            g.fillRect(470, 0, 15, 15);
-            g.setColor(TableColors.MISSED);
-            g.fillRect(680, 0, 15, 15);
+            g.setColor(LoggerTableFormat.TableColors.COMPLETE);
+            g.fillRect(50, 10, 15, 15);
+            g.setColor(LoggerTableFormat.TableColors.TODAY);
+            g.fillRect(190, 10, 15, 15);
+            g.setColor(LoggerTableFormat.TableColors.IN_PROGRESS);
+            g.fillRect(330, 10, 15, 15);
+            g.setColor(LoggerTableFormat.TableColors.MISSED);
+            g.fillRect(470, 10, 15, 15);
 
             // draw the square black outline
             g.setColor(Color.BLACK);
-            g.drawRect(50, 0, 15, 15);
-            g.drawRect(260, 0, 15, 15);
-            g.drawRect(470, 0, 15, 15);
-            g.drawRect(680, 0, 15, 15);
+            g.drawRect(50, 10, 15, 15);
+            g.drawRect(190, 10, 15, 15);
+            g.drawRect(330, 10, 15, 15);
+            g.drawRect(470, 10, 15, 15);
 
 
             // write the legend
             g.setFont(legendFont);
-            g.drawString("Complete", 70, 12);
-            g.drawString("Today", 280, 12);
-            g.drawString("In Progress", 490, 12);
-            g.drawString("Late", 700, 12);
+            g.drawString("Complete", 70, 22);
+            g.drawString("Today", 210, 22);
+            g.drawString("In Progress", 350, 22);
+            g.drawString("Late", 490, 22);
 
         }
     }
 
-    private class Date {
-        private int year;
-        private int month;
-        private int day;
 
-        Date(String dateString) {
-            String[] dateArray = dateString.split("-");
-            year = Integer.parseInt(dateArray[0]);
-            month = Integer.parseInt(dateArray[1]);
-            day = Integer.parseInt(dateArray[2]);
-        }
-
-        Date(int[] intArray) {
-            year = intArray[0];
-            month = intArray[1];
-            day = intArray[2];
-        }
-
-
-        public int getYear() {
-            return year;
-        }
-
-        public int getMonth() {
-            return month;
-        }
-
-        public int getDay() {
-            return day;
-        }
-
-        // if the date param d is after this date, return 1
-        // if the date param d is before this date, return -1;
-        // if they are the same date, return 0;
-        public int compareTo(Date d) {
-            if (getYear() < d.getYear()) {
-                return 1;
-            } else if (getYear() == d.getYear()) {
-                if (getMonth() < d.getMonth()) {
-                    return 1;
-                } else if (getMonth() == d.getMonth()) {
-                    if (getDay() < d.getDay()) {
-                        return 1;
-                    } else if (getDay() == d.getDay()) {
-                        return 0;
-                    } else {
-                        return -1;
-                    }
-                } else {
-                    return -1;
-                }
-            } else {
-                return -1;
-            }
-        }
-    }
 }
 
 
