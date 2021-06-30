@@ -26,7 +26,6 @@ public class RenameExistingAgenda extends JPanel {
     private JLabel successLabel;
     private JTextField inputName;
     private JButton renameButton;
-    private SimpleLinkedList<JPanel> errorListPanels;
     private String previousName;
     private String errors;
     public RenameExistingAgenda(LoggerButtonListener listener, String[] errorPossibilities) {
@@ -47,27 +46,6 @@ public class RenameExistingAgenda extends JPanel {
         renameButton.setFont(new Font("Verdana", Font.BOLD, 30));
 
         this.setLayout(new GridLayout(5, 1));
-
-       /* errorListPanels = new SimpleLinkedList<JPanel>();
-
-        JPanel panel = new JPanel();
-        panel.setLayout(new GridLayout(4,1));
-        JLabel label = new JLabel("<html><h1><b>Invalid name. The schedule name <em>cannot:</em></b></h1></html");
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-
-        panel.add(label);
-
-        for (int i = 0; i < errorPossibilities.length; i++){
-            if (i != 0 && i % 3 == 0){
-                errorListPanels.add(panel);
-                panel = new JPanel();
-                panel.setLayout(new GridLayout(4,1));
-            }
-            label = (new JLabel("<html><h2><em>-" + errorPossibilities[i]+ "</em></h2></html"));
-            label.setHorizontalAlignment(SwingConstants.CENTER);
-            panel.add(label);
-        }
-        errorListPanels.add(panel);*/
 
         this.add(titleLabel);
         this.add(inputName);
