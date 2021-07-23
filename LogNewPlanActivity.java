@@ -98,7 +98,6 @@ public class LogNewPlanActivity extends JPanel implements ActionListener {
         createButton.setFont(new Font("Verdana", Font.BOLD, 40));
         createButton.addActionListener(listener);
 
-
         datePanel.add(new JLabel("<html>Start Date</html>"));
         datePanel.add(monthList);
         datePanel.add(dayList);

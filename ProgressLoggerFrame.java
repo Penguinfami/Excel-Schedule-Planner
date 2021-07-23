@@ -300,7 +300,6 @@ public class ProgressLoggerFrame extends JFrame {
         Integer selectedYear = logNewPlan.getSelectedYear();
         Integer selectedYear2 = logNewPlan.getSelectedYear2();
 
-
         // Convert the Month String to the number value
         for (int i = 0; i < 12; i++) {
             if (months[i].equals(logNewPlan.getSelectedMonth())) {
@@ -325,7 +324,6 @@ public class ProgressLoggerFrame extends JFrame {
         }
 
         Activity newActivity = new Activity(dateStartString, dateEndString, logNewPlan.getTitle(), logNewPlan.getActivityInfo(), todayString, null);
-
 
         Date startDate = new Date(selectedYear,selectedMonth, selectedDay);
         Date todaysDate = new Date(today.get(Calendar.YEAR), today.get(Calendar.MONTH) + 1, today.get(Calendar.DAY_OF_MONTH));
@@ -380,18 +378,22 @@ public class ProgressLoggerFrame extends JFrame {
 
         StringBuilder errorComponents = new StringBuilder();
 
-
         if (newActivityTitle.trim().equals("")) {
             errorComponents.append("<br>No Title of Activity");
         }
 
-        if (unCastedPanel instanceof LogNewPlanActivity) {
-            for (int i = 0; i < listOfActivities.size(); i++) {
-                if ((newActivityTitle).equalsIgnoreCase(listOfActivities.get(i).getTitleOfActivity())) {
+        for (int i = 0; i < listOfActivities.size(); i++) {
+            if ((newActivityTitle).equalsIgnoreCase(listOfActivities.get(i).getTitleOfActivity())) {
+                if (unCastedPanel instanceof EditPlannedActivity){
+                    if (listOfActivities.get(i) != editActivity.getCurrentActivity()){
+                        errorComponents.append("<br>An Activity Of That Title Already Exists");
+                    }
+                } else {
                     errorComponents.append("<br>An Activity Of That Title Already Exists");
                 }
             }
         }
+
 
         boolean startDateExist = true;
 
@@ -415,11 +417,19 @@ public class ProgressLoggerFrame extends JFrame {
                         "October", "November", "December"};
                 for (int i = 0; i < months.length; i++){
                     if (months[i].equals(selectedMonth)){
-                        String monthStr = ""+i + "";
+                        String monthStr;
                         if (i < 10){
                             monthStr = "0"+ i;
+                        } else {
+                            monthStr = ""+i + "";
                         }
-                        LocalDate.parse(selectedYear+ "-" + monthStr + "-" + selectedDay, dateTimeFormatter);
+                        String dayStr;
+                        if (selectedDay < 10){
+                            dayStr = "0"+selectedDay;
+                        } else {
+                            dayStr = "" + selectedDay;
+                        }
+                        LocalDate.parse(selectedYear+ "-" + monthStr + "-" + dayStr, dateTimeFormatter);
                     }
                 }
             }catch(DateTimeParseException e){
@@ -450,11 +460,19 @@ public class ProgressLoggerFrame extends JFrame {
                             "October", "November", "December"};
                     for (int i = 0; i < months.length; i++){
                         if (months[i].equals(selectedMonth2)){
-                            String monthStr = ""+i + "";
+                            String monthStr;
                             if (i < 10){
                                 monthStr = "0"+ i;
+                            } else {
+                                monthStr = ""+i + "";
                             }
-                            LocalDate.parse(selectedYear2 + "-" + monthStr+ "-" + selectedDay2, dateTimeFormatter);
+                            String dayStr;
+                            if (selectedDay2 < 10){
+                                dayStr = "0"+selectedDay2;
+                            } else {
+                                dayStr = "" + selectedDay2;
+                            }
+                            LocalDate.parse(selectedYear2 + "-" + monthStr+ "-" + dayStr, dateTimeFormatter);
                         }
                     }
                 }catch(DateTimeParseException e){
@@ -595,7 +613,6 @@ public class ProgressLoggerFrame extends JFrame {
 
     public void deleteActivity() {
         int index = updateActivity.getSelectedIndex();
-
 
         if (index != 0) {
             String name = updateActivity.getSelectedString();
